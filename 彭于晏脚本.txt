@@ -1,0 +1,426 @@
+-- 初始化UI库（带重试机制）
+local ui
+local retries = 0
+local maxRetries = 3
+
+while retries < maxRetries do
+    local success, result = pcall(function()
+        local randomString = tostring(math.random(100000,999999))..tostring(math.random(100000,999999))
+        local url = "https://raw.githubusercontent.com/dingding123hhh/hun/main/jmlibrary1.lua?"..randomString
+        return loadstring(game:HttpGet(url, true))()
+    end)
+    
+    if success then
+        ui = result
+        break
+    else
+        retries = retries + 1
+        if retries < maxRetries then
+            wait(2) -- 等待2秒后重试
+        else
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "错误",
+                Text = "无法加载UI库",
+                Duration = 5
+            })
+            return
+        end
+    end
+end
+
+-- 创建主窗口
+local win = ui:new("彭于晏脚本 V1.5")
+
+-- 反检测系统
+local AntiCheat = {
+    Enabled = true,
+    Methods = {
+        RandomizeCalls = true,
+        ObfuscatePatterns = true,
+        DelayExecution = true,
+        FakeFunctions = true
+    }
+}
+
+-- 反检测函数
+local function AntiDetect(actionName, func)
+    if not AntiCheat.Enabled then
+        return func()
+    end
+    
+    -- 随机延迟
+    if AntiCheat.Methods.DelayExecution then
+        local minDelay, maxDelay = 50, 300 -- 毫秒
+        local delay = math.random(minDelay, maxDelay) / 1000
+        wait(delay)
+    end
+    
+    -- 随机调用模式
+    if AntiCheat.Methods.RandomizeCalls then
+        local patterns = {
+            function() return func() end,
+            function() 
+                local r = math.random(1,3)
+                if r == 1 then 
+                    return func() 
+                elseif r == 2 then 
+                    return pcall(func) 
+                else 
+                    return coroutine.wrap(func)() 
+                end
+            end
+        }
+        return patterns[math.random(1,#patterns)]()
+    else
+        return func()
+    end
+end
+
+-- 脚本信息标签页
+local infoTab = win:Tab("『脚本公告』", '87437251671184')
+local infoSection = infoTab:section("关于", true)
+
+infoSection:Label("彭于晏脚本 v1.5")
+infoSection:Label("专为Delta注入器优化")
+infoSection:Label("所有功能内置反检测")
+infoSection:Label("除飞行功能没有")
+infoSection:Label("作者每天都在练习驯服AI")
+infoSection:Label("让AI帮我写出更强大的脚本")
+infoSection:Label("实力毋庸置疑")
+infoSection:Label("Xi Pro国内第一")
+infoSection:Label("作者：彭于晏")
+
+-- 反检测设置
+local antiCheatSection = infoTab:section("反检测设置", false)
+antiCheatSection:Toggle("启用反检测", "AntiCheatToggle", true, function(state)
+    AntiCheat.Enabled = state
+end)
+
+antiCheatSection:Toggle("随机调用模式", "RandomizeCalls", true, function(state)
+    AntiCheat.Methods.RandomizeCalls = state
+end)
+
+antiCheatSection:Toggle("执行延迟", "DelayExecution", true, function(state)
+    AntiCheat.Methods.DelayExecution = state
+end)
+
+-- 通用功能
+local UITab1 = win:Tab("『通用功能』", '87437251671184')
+local about = UITab1:section("移动设置", true)
+
+-- 跑步速度（带反检测）
+about:Slider("步行速度", "WalkSpeed", 16, 16, 999, false, function(Speed)
+    AntiDetect("WalkSpeed", function()
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChildOfClass("Humanoid") then
+            character:FindFirstChildOfClass("Humanoid").WalkSpeed = Speed
+        end
+    end)
+end)
+
+-- 跳跃高度（带反检测）
+about:Slider('跳跃高度', 'JumpPowerSlider', 50, 50, 999, false, function(Value)
+    AntiDetect("JumpPower", function()
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChildOfClass("Humanoid") then
+            character:FindFirstChildOfClass("Humanoid").JumpPower = Value
+        end
+    end)
+end)
+
+-- 自动互动（带反检测）
+about:Toggle("自动互动", "AutoInteract", false, function(state)
+    AntiDetect("AutoInteract", function()
+        if state then
+            autoInteract = true
+            while autoInteract do
+                for _, descendant in pairs(workspace:GetDescendants()) do
+                    if descendant:IsA("ProximityPrompt") then
+                        fireproximityprompt(descendant)
+                    end
+                end
+                wait(math.random(20, 40)/100) -- 随机延迟
+            end
+        else
+            autoInteract = false
+        end
+    end)
+end)
+
+-- 彭于晏飞行（带反检测）
+about:Button("彭于晏飞行",function()
+    AntiDetect("Flight", function()
+        -- 飞行脚本（内置反检测）
+        local Flight = loadstring(game:HttpGet("https://raw.githubusercontent.com/odhdshhe/-V3.0/refs/heads/main/%E9%A3%9E%E8%A1%8C%E8%84%9A%E6%9C%ACV3(%E5%85%A8%E6%B8%B8%E6%88%8F%E9%80%9A%E7%94%A8)%20(1).txt"))()
+        
+        -- 飞行反检测增强
+        if Flight and AntiCheat.Enabled then
+            -- 随机化飞行参数
+            local originalFly = Flight.fly
+            Flight.fly = function(...)
+                -- 随机延迟
+                if math.random(1, 10) > 7 then
+                    wait(math.random(10, 50)/100)
+                end
+                
+                -- 随机调用模式
+                if math.random(1, 2) == 1 then
+                    return originalFly(...)
+                else
+                    return pcall(originalFly, ...)
+                end
+            end
+            
+            -- 随机化飞行速度
+            local originalSetSpeed = Flight.SetSpeed
+            Flight.SetSpeed = function(speed)
+                local adjustedSpeed = speed * (0.9 + math.random() * 0.2) -- 速度波动±10%
+                return originalSetSpeed(adjustedSpeed)
+            end
+        end
+        
+        return Flight
+    end)
+end)
+
+-- 夜视功能
+local visualTab = win:Tab("『夜视』", '6031097229')
+local visualSection = visualTab:section("视觉设置", true)
+
+-- 夜视功能（带反检测）
+local nightLighting = {
+    Ambient = Color3.new(1, 1, 1),
+    OutdoorAmbient = Color3.new(1, 1, 1),
+    Brightness = 2,
+    GlobalShadows = false
+}
+
+local originalLighting = {
+    Ambient = game.Lighting.Ambient,
+    OutdoorAmbient = game.Lighting.OutdoorAmbient,
+    Brightness = game.Lighting.Brightness,
+    GlobalShadows = game.Lighting.GlobalShadows
+}
+
+visualSection:Toggle("超级夜视", "SuperNightVision", false, function(state)
+    AntiDetect("NightVision", function()
+        if state then
+            -- 开启夜视（随机顺序设置）
+            local settings = {
+                {prop = "Brightness", value = nightLighting.Brightness},
+                {prop = "GlobalShadows", value = nightLighting.GlobalShadows},
+                {prop = "Ambient", value = nightLighting.Ambient},
+                {prop = "OutdoorAmbient", value = nightLighting.OutdoorAmbient}
+            }
+            
+            -- 打乱设置顺序
+            for i = #settings, 2, -1 do
+                local j = math.random(1, i)
+                settings[i], settings[j] = settings[j], settings[i]
+            end
+            
+            for _, setting in ipairs(settings) do
+                game.Lighting[setting.prop] = setting.value
+                if AntiCheat.Methods.DelayExecution then
+                    wait(math.random(5, 20)/100)
+                end
+            end
+            
+            -- 调整雾效
+            if game.Lighting.FogEnd < 1000 then
+                game.Lighting.FogEnd = 1000
+            end
+        else
+            -- 恢复原始设置
+            game.Lighting.Ambient = originalLighting.Ambient
+            game.Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+            game.Lighting.Brightness = originalLighting.Brightness
+            game.Lighting.GlobalShadows = originalLighting.GlobalShadows
+        end
+    end)
+end)
+
+-- 玩家透视（带反检测）
+local espEnabled = false
+local espTable = {}
+
+local function createESP(player)
+    if player == game.Players.LocalPlayer then return end
+    
+    local character = player.Character
+    if not character then return end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+    
+    -- 随机颜色
+    local fillColor = Color3.fromRGB(math.random(200,255), math.random(0,100), math.random(0,100))
+    local outlineColor = Color3.fromRGB(255, math.random(150,255), 0)
+    
+    -- 创建高亮效果
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESP_"..tostring(math.random(10000,99999))
+    highlight.FillColor = fillColor
+    highlight.FillTransparency = 0.5
+    highlight.OutlineColor = outlineColor
+    highlight.OutlineTransparency = 0
+    highlight.Parent = character
+    
+    -- 创建名字标签
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ESP_"..tostring(math.random(10000,99999))
+    billboard.Adornee = humanoidRootPart
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 2, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = character
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "ESP_Name"
+    nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = player.Name
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextScaled = true
+    nameLabel.Font = Enum.Font.SourceSansBold
+    nameLabel.Parent = billboard
+    
+    local distanceLabel = Instance.new("TextLabel")
+    distanceLabel.Name = "ESP_Distance"
+    distanceLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    distanceLabel.Position = UDim2.new(0, 0, 0.5, 0)
+    distanceLabel.BackgroundTransparency = 1
+    distanceLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    distanceLabel.TextScaled = true
+    distanceLabel.Font = Enum.Font.SourceSans
+    distanceLabel.Parent = billboard
+    
+    -- 更新距离（带随机延迟）
+    game:GetService("RunService").Heartbeat:Connect(function()
+        if not espEnabled or not character:FindFirstChild("HumanoidRootPart") then return end
+        if math.random(1, 10) > 3 then -- 70%几率更新
+            local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - humanoidRootPart.Position).Magnitude
+            distanceLabel.Text = string.format("%.1f 米", distance)
+        end
+    end)
+    
+    espTable[player] = {highlight = highlight, billboard = billboard}
+end
+
+visualSection:Toggle("玩家透视", "PlayerESP", false, function(state)
+    AntiDetect("ESP", function()
+        espEnabled = state
+        
+        if state then
+            -- 为现有玩家创建ESP
+            for _, player in pairs(game.Players:GetPlayers()) do
+                if player ~= game.Players.LocalPlayer then
+                    createESP(player)
+                    player.CharacterAdded:Connect(function(character)
+                        wait(math.random(5, 15)/10) -- 随机等待时间
+                        createESP(player)
+                    end)
+                end
+            end
+            
+            -- 为新加入玩家创建ESP
+            game.Players.PlayerAdded:Connect(function(player)
+                player.CharacterAdded:Connect(function(character)
+                    wait(math.random(5, 15)/10)
+                    createESP(player)
+                end)
+            end)
+        else
+            -- 移除所有ESP（随机顺序）
+            local players = {}
+            for player in pairs(espTable) do table.insert(players, player) end
+            
+            for i = #players, 1, -1 do
+                local j = math.random(1, i)
+                players[i], players[j] = players[j], players[i]
+            end
+            
+            for _, player in ipairs(players) do
+                removeESP(player)
+                if AntiCheat.Methods.DelayExecution then
+                    wait(math.random(5, 20)/100)
+                end
+            end
+        end
+    end)
+end)
+
+-- 实用功能标签页
+local utilityTab = win:Tab("『实用功能』", '7733765398')
+local utilitySection = utilityTab:section("辅助工具", true)
+
+-- 穿墙模式（带反检测）
+local noClipConnection
+utilitySection:Toggle("穿墙模式", "NoClip", false, function(state)
+    AntiDetect("NoClip", function()
+        if noClipConnection then
+            noClipConnection:Disconnect()
+            noClipConnection = nil
+        end
+        
+        if state then
+            noClipConnection = game:GetService("RunService").Stepped:Connect(function()
+                if math.random(1, 10) > 2 then -- 80%几率执行
+                    local character = game.Players.LocalPlayer.Character
+                    if character then
+                        for _, part in pairs(character:GetDescendants()) do
+                            if part:IsA("BasePart") then
+                                part.CanCollide = false
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+-- 无限跳跃（优化版）
+local infJumpConnection
+utilitySection:Toggle("无限跳跃", "InfJump", false, function(state)
+    if infJumpConnection then
+        infJumpConnection:Disconnect()
+        infJumpConnection = nil
+    end
+    
+    if state then
+        infJumpConnection = game:GetService("UserInputService").JumpRequest:Connect(function()
+            local character = game.Players.LocalPlayer.Character
+            if character and character:FindFirstChildOfClass("Humanoid") then
+                character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+            end
+        end)
+    end
+end)
+
+-- 角色重生时清理效果
+game.Players.LocalPlayer.CharacterAdded:Connect(function()
+    AntiDetect("CharacterReset", function()
+        if noClipConnection then
+            noClipConnection:Disconnect()
+            noClipConnection = nil
+        end
+        
+        -- 重新应用透视
+        if espEnabled then
+            wait(1) -- 等待角色完全加载
+            for _, player in pairs(game.Players:GetPlayers()) do
+                if player ~= game.Players.LocalPlayer then
+                    createESP(player)
+                end
+            end
+        end
+    end)
+end)
+
+-- 游戏关闭时清理
+game:GetService("Players").LocalPlayer.OnTeleport:Connect(function()
+    -- 保存状态以便重新注入
+    if noClipConnection then noClipConnection:Disconnect() end
+    if infJumpConnection then infJumpConnection:Disconnect() end
+end)
