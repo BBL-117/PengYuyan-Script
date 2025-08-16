@@ -7,11 +7,11 @@ local UITab1 = win:Tab("『通用』",'87437251671184')
 local about = UITab1:section("『通用』",true)
 about:Toggle("自动打桩", "Toggle", false, function(Value)
 while task.wait(1) and Value do
-game:GetService("ReplicatedStorage").Event.GradePromotion:FireServer("Power",workspace:FindFirstChild("\229\141\135\231\186\167"):FindFirstChild("\230\156\168\230\161\169").Body,11e11)
+game:GetService("ReplicatedStorage").Event.GradePromotion:FireServer("Power",workspace:FindFirstChild("\229\141\135\231\186\167"):FindFirstChild("\230\156\168\230\161\169").Body,14e14)
 end
 end)
 about:Toggle("自动射靶", "Toggle", false, function(Value)
 while task.wait(1) and Value do
-game:GetService("ReplicatedStorage").Event.GradePromotion:FireServer("FlyWeapon",workspace.Target.Location4,12e12)
+game:GetService("ReplicatedStorage").Event.GradePromotion:FireServer("FlyWeapon",workspace.Target.Location4,14e14)
 end
 end)
