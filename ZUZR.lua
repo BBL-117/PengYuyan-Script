@@ -1,4 +1,4 @@
-
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Yisan886/Aero/refs/heads/main/ui.lua.txt"))()
 
 WindUI:AddTheme({
     Name = "My Theme",
