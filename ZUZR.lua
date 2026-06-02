@@ -424,7 +424,7 @@ local function sendTestBuff()
 end
 
 MainSec:Button({
-    Title = "神的测试 (点击发送 1051-3000)",
+    Title = "神的测试",
     Callback = function()
         sendTestBuff()
     end
