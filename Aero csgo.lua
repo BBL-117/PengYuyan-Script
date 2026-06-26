@@ -215,11 +215,11 @@ task.spawn(function()
     end
 end)
 
-local Hitbox = {Enabled = false, Size = 3}
+local Hitbox = {Enabled = false, Size = 5}
 local originalHeadSizes = {}
 local HitboxGroup = Tabs.Combat:AddLeftGroupbox("命中框扩大", "target")
 HitboxGroup:AddToggle("HitboxToggle", { Text = "启用命中框扩大", Default = false, Callback = function(v) Hitbox.Enabled = v end })
-HitboxGroup:AddSlider("HitboxSize", { Text = "大小", Default = 3, Min = 1, Max = 3, Rounding = 1, Suffix = " 单位", Callback = function(v) Hitbox.Size = v end })
+HitboxGroup:AddSlider("HitboxSize", { Text = "大小", Default = 5, Min = 1, Max = 5, Rounding = 1, Suffix = " 单位", Callback = function(v) Hitbox.Size = v end })
 task.spawn(function()
     while task.wait(0.5) do
         local ef = getEnemyFolder()
