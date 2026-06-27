@@ -50,6 +50,7 @@ local UserInputService=game:GetService("UserInputService")
 local TextService=game:GetService("TextService")
 local CoreGui=game:GetService("CoreGui")
 local HttpService=game:GetService("HttpService")
+local VIM=game:GetService("VirtualInputManager")
 local player=Players.LocalPlayer
 local camera=workspace.CurrentCamera
 local CharactersFolder=workspace:WaitForChild("Characters",10)
@@ -168,7 +169,7 @@ if not VisualAimbot.Enabled or not isAlive()then return end
 local aim=(VisualAimbot.Mode=="自动")or(VisualAimbot.Mode=="热键"and VisualAimbot.KeyHeld)
 if not aim then return end
 local t=getClosestEnemy()
-if t and mousemoverel then
+if t then
 local hp=camera:WorldToViewportPoint(t.Position)
 local mp
 if UserInputService.TouchEnabled then
@@ -176,7 +177,11 @@ mp=Vector2.new(camera.ViewportSize.X/2,camera.ViewportSize.Y/2)
 else
 mp=UserInputService:GetMouseLocation()
 end
-mousemoverel((hp.X-mp.X)/VisualAimbot.Smooth,(hp.Y-mp.Y)/VisualAimbot.Smooth)
+local deltaX=(hp.X-mp.X)/VisualAimbot.Smooth
+local deltaY=(hp.Y-mp.Y)/VisualAimbot.Smooth
+if deltaX~=0 or deltaY~=0 then
+VIM:SendMouseMoveEvent(deltaX,deltaY,Enum.UserInputType.MouseMovement)
+end
 end
 end)
 
@@ -223,8 +228,9 @@ local hum=model:FindFirstChildOfClass("Humanoid")
 if hum and hum.Health>0 then
 if TriggerBot.WallCheck and not IsVisible(model:FindFirstChild("Head"))then continue end
 if TriggerBot.Delay>0 then task.wait(TriggerBot.Delay/1000)end
-if mouse1click then mouse1click()end
+VIM:SendMouseButtonEvent(Enum.UserInputType.MouseButton1,Enum.UserInputState.Begin,false,0,0)
 task.wait(0.05)
+VIM:SendMouseButtonEvent(Enum.UserInputType.MouseButton1,Enum.UserInputState.End,false,0,0)
 end
 end
 end
