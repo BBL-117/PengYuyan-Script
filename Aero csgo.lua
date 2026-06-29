@@ -1,129 +1,150 @@
-local function AntiBAC()
+local function HardenedAntiBAC()
     if game:GetService("RunService"):IsStudio() then return end
-    local debug = debug
-    local getgc = getgc
-    local getreg = getreg
-    local getfenv = getfenv
-    local setfenv = setfenv
-    local getupvalue = debug.getupvalue
-    local setupvalue = debug.setupvalue
-    local getinfo = debug.getinfo
-    local hookfunction = hookfunction or function(f, h) return f end
 
-    local function hideFromGC()
-        local ourScript = script or getfenv(0).script
-        if not ourScript then return end
-        local ourID = ourScript:GetFullName()
-        local old_getgc = getgc
-        getgc = function(opt)
-            local result = old_getgc(opt)
-            if type(result) == "table" then
-                local filtered = {}
-                for _, v in ipairs(result) do
-                    if type(v) == "table" and rawget(v, "__script") == ourID then
-                    else
-                        table.insert(filtered, v)
+    local function findACModule()
+        for _, mod in ipairs(getloadedmodules()) do
+            if type(mod) == "table" and mod.Name then
+                local name = mod.Name or ""
+                if name:match("Anti") or name:match("BAC") or name:match("Cheat") then
+                    return mod
+                end
+                local ok, func = pcall(require, mod)
+                if ok and type(func) == "function" then
+                    local i = 1
+                    while true do
+                        local k, v = debug.getupvalue(func, i)
+                        if not k then break end
+                        if type(v) == "function" and debug.getinfo(v).name == "Check" then
+                            return mod
+                        end
+                        i = i + 1
                     end
                 end
-                return filtered
             end
-            return result
+        end
+        return nil
+    end
+
+    local oldRequire = require
+    require = function(module)
+        if type(module) == "string" and module:find("Anti") then
+            return function() return true end
+        end
+        return oldRequire(module)
+    end
+
+    local HttpService = game:GetService("HttpService")
+    local methods = {"Get", "GetAsync", "Post", "PostAsync", "Request", "RequestAsync"}
+    for _, method in ipairs(methods) do
+        if HttpService[method] then
+            local original = HttpService[method]
+            HttpService[method] = function(self, ...)
+                local args = {...}
+                local url = args[1]
+                if type(url) == "string" and (url:find("ban") or url:find("report") or url:find("analytics")) then
+                    return "{}"
+                end
+                return original(self, ...)
+            end
         end
     end
-    pcall(hideFromGC)
+
+    local function hideSelf()
+        local ourScript = script
+        if ourScript then ourScript:Destroy() end
+        local env = getfenv(1)
+        for k, v in pairs(env) do
+            if type(v) == "function" and debug.getinfo(v).source == "@Aero csgo.lua" then
+                env[k] = nil
+            end
+        end
+    end
+    pcall(hideSelf)
+
+    local old_getgc = getgc
+    getgc = function(opt)
+        return {}
+    end
 
     local old_getreg = getreg
     getreg = function()
-        local reg = old_getreg()
-        if type(reg) == "table" then
-            return setmetatable({}, { __index = function() return nil end })
-        end
-        return reg
+        return setmetatable({}, { __index = function() return nil end })
     end
 
     local old_getfenv = getfenv
     getfenv = function(index)
-        if type(index) == "number" and index == 0 then
-            return old_getfenv(index)
-        end
-        return setmetatable({}, { __index = old_getfenv(index) })
+        if index == 0 then return old_getfenv(index) end
+        return setmetatable({}, { __index = function() return nil end })
     end
 
-    local oldHttpGet = game.HttpGet
-    local oldHttpGetAsync = game.HttpGetAsync
-    if oldHttpGet and oldHttpGetAsync then
-        local HttpService = game:GetService("HttpService")
-        game.HttpGet = function(self, url, ...)
-            return oldHttpGet(self, url, ...)
+    local old_getupvalue = debug.getupvalue
+    debug.getupvalue = function(func, idx)
+        if func and type(func) == "function" and debug.getinfo(func).source:find("AntiBAC") then
+            return nil
         end
-        game.HttpGetAsync = function(self, url, ...)
-            return oldHttpGetAsync(self, url, ...)
-        end
-        if HttpService then
-            HttpService.Get = game.HttpGet
-            HttpService.GetAsync = game.HttpGetAsync
-        end
+        return old_getupvalue(func, idx)
     end
 
-    local function patchAntiCheat()
-        local acModule = game:FindFirstChild("AntiCheat") or game:FindFirstChild("BAC")
-        if acModule and acModule:IsA("ModuleScript") then
-            local succ, func = pcall(require, acModule)
-            if succ and type(func) == "function" then
-                local upvals = {}
-                local i = 1
-                while true do
-                    local name, val = debug.getupvalue(func, i)
-                    if not name then break end
-                    upvals[name] = val
-                    i = i + 1
-                end
-                for k, v in pairs(upvals) do
-                    if type(v) == "boolean" and (string.lower(k):find("enabled") or string.lower(k):find("active") or string.lower(k):find("check")) then
-                        debug.setupvalue(func, k, false)
-                    end
-                    if type(v) == "function" then
-                        debug.setupvalue(func, k, function() return true end)
-                    end
+    local old_setupvalue = debug.setupvalue
+    debug.setupvalue = function(func, idx, val)
+        if func and type(func) == "function" and debug.getinfo(func).source:find("AntiBAC") then
+            return nil
+        end
+        return old_setupvalue(func, idx, val)
+    end
+
+    local function disableTeleport()
+        local ts = game:GetService("TeleportService")
+        if ts then
+            local oldTeleport = ts.Teleport
+            ts.Teleport = function(...) return end
+            ts.TeleportToPrivateServer = function(...) return end
+        end
+    end
+    pcall(disableTeleport)
+
+    local function disableRemoteEvents()
+        for _, v in ipairs(game:GetDescendants()) do
+            if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+                if v.Name:find("Anti") or v.Name:find("Ban") or v.Name:find("Report") then
+                    v.OnServerEvent:Connect(function() return end)
+                    pcall(function() v:Destroy() end)
                 end
             end
         end
     end
-    pcall(patchAntiCheat)
+    pcall(disableRemoteEvents)
 
-    local function disableDebugFuncs()
-        local mt = getrawmetatable and getrawmetatable(game) or debug.getmetatable(game)
-        if mt and mt.__index then
-            local oldIndex = mt.__index
-            mt.__index = function(self, key)
-                if key == "HttpGet" or key == "HttpGetAsync" then
-                    return function() end
-                end
-                return oldIndex(self, key)
-            end
-        end
+    local function disruptHeartbeat()
+        local rs = game:GetService("RunService")
+        local oldStepped = rs.Stepped
+        rs.Stepped = function() return end
+        rs.Heartbeat = function() return end
+        rs.RenderStepped = function() return end
     end
-    pcall(disableDebugFuncs)
+    pcall(disruptHeartbeat)
 
     task.spawn(function()
-        while task.wait(30) do
+        while task.wait(20) do
             pcall(function()
                 collectgarbage("collect")
-                if gcinfo then gcinfo() end
+                local lp = game.Players.LocalPlayer
+                if lp and lp.Character then
+                    lp.Character:SetAttribute("_script", nil)
+                    lp.Character:SetAttribute("Bypass", nil)
+                end
+                for _, v in pairs(game:GetDescendants()) do
+                    if v:IsA("StringValue") and v.Name:find("Anti") then
+                        v:Destroy()
+                    end
+                end
             end)
         end
     end)
 
-    pcall(function()
-        local players = game:GetService("Players")
-        local localPlayer = players.LocalPlayer
-        if localPlayer and localPlayer.Character then
-            localPlayer.Character:SetAttribute("_script", nil)
-        end
-    end)
-    print("[AntiBAC] Loaded")
+    print("[Hardened AntiBAC] Loaded")
 end
-xpcall(AntiBAC, function(err) warn("[AntiBAC] partial: " .. tostring(err)) end)
+xpcall(HardenedAntiBAC, function(err) warn("[Hardened AntiBAC] error: " .. tostring(err)) end)
 
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
