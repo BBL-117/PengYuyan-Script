@@ -1,48 +1,138 @@
-local function HardenedAntiBAC()
+local function UltimateAntiBAC()
     if game:GetService("RunService"):IsStudio() then return end
 
-    local function findACModule()
-        for _, mod in ipairs(getloadedmodules()) do
-            if type(mod) == "table" and mod.Name then
-                local name = mod.Name or ""
-                if name:match("Anti") or name:match("BAC") or name:match("Cheat") then
-                    return mod
+    local Players = game:GetService("Players")
+    local HttpService = game:GetService("HttpService")
+    local RunService = game:GetService("RunService")
+    local TeleportService = game:GetService("TeleportService")
+    local CoreGui = game:GetService("CoreGui")
+    local LocalPlayer = Players.LocalPlayer
+
+    local hiddenModules = {}
+    local protectedGuis = {}
+    local originalFunctions = {}
+    local function saveOrig(name, f) originalFunctions[name] = f end
+    local function getOrig(name) return originalFunctions[name] end
+
+    if getgc then saveOrig("getgc", getgc) getgc = function(...) return {} end end
+    if getreg then saveOrig("getreg", getreg) getreg = function() return setmetatable({}, {__index=function() end}) end end
+    if getfenv then saveOrig("getfenv", getfenv) getfenv = function(idx) if idx == 0 then return getOrig("getfenv")(idx) end return setmetatable({}, {__index=function() end}) end end
+    if getnilinstances then saveOrig("getnilinstances", getnilinstances) getnilinstances = function() return {} end end
+
+    local function blockDebug()
+        local old_getinfo = debug.getinfo
+        debug.getinfo = function(thread, f, ...)
+            if type(f) == "function" then
+                local info = old_getinfo(f, "S")
+                if info and info.source:lower():find("anti") then
+                    return nil
                 end
-                local ok, func = pcall(require, mod)
-                if ok and type(func) == "function" then
-                    local i = 1
-                    while true do
-                        local k, v = debug.getupvalue(func, i)
-                        if not k then break end
-                        if type(v) == "function" and debug.getinfo(v).name == "Check" then
-                            return mod
-                        end
-                        i = i + 1
+            end
+            return old_getinfo(thread, f, ...)
+        end
+        saveOrig("debug.getupvalue", debug.getupvalue)
+        debug.getupvalue = function(func, idx)
+            if type(func) == "function" then
+                local info = debug.getinfo(func, "S")
+                if info and info.source:lower():find("anti") then return nil end
+            end
+            return getOrig("debug.getupvalue")(func, idx)
+        end
+        saveOrig("debug.setupvalue", debug.setupvalue)
+        debug.setupvalue = function(func, idx, val)
+            if type(func) == "function" then
+                local info = debug.getinfo(func, "S")
+                if info and info.source:lower():find("anti") then return nil end
+            end
+            return getOrig("debug.setupvalue")(func, idx, val)
+        end
+        saveOrig("debug.getconstant", debug.getconstant)
+        debug.getconstant = function(func, idx)
+            if type(func) == "function" then
+                local info = debug.getinfo(func, "S")
+                if info and info.source:lower():find("anti") then return nil end
+            end
+            return getOrig("debug.getconstant")(func, idx)
+        end
+        saveOrig("debug.setconstant", debug.setconstant)
+        debug.setconstant = function(func, idx, val)
+            if type(func) == "function" then
+                local info = debug.getinfo(func, "S")
+                if info and info.source:lower():find("anti") then return nil end
+            end
+            return getOrig("debug.setconstant")(func, idx, val)
+        end
+    end
+    pcall(blockDebug)
+
+    local function isACModule(mod)
+        if type(mod) ~= "table" then return false end
+        local nm = (mod.Name or ""):lower()
+        if nm:match("anti") or nm:match("bac") or nm:match("cheat") or nm:match("ac") then return true end
+        for _, v in pairs(mod) do
+            if type(v) == "function" then
+                for i = 1, 200 do
+                    local ok, uv = pcall(debug.getupvalue, v, i)
+                    if not ok or not uv then break end
+                    if type(uv) == "function" and (debug.getinfo(uv,"n").name or ""):lower():match("check") then
+                        return true
                     end
                 end
             end
         end
-        return nil
+        return false
     end
 
-    local oldRequire = require
-    require = function(module)
-        if type(module) == "string" and module:find("Anti") then
-            return function() return true end
+    saveOrig("require", require)
+    require = function(mod, ...)
+        local res = getOrig("require")(mod, ...)
+        if type(mod) == "string" and isACModule(res) then
+            if not hiddenModules[mod] then
+                hiddenModules[mod] = true
+                for k, v in pairs(res) do
+                    if type(v) == "function" then
+                        res[k] = function() return true end
+                    end
+                end
+                pcall(function()
+                    local mt = getmetatable(res)
+                    if mt then mt.__index = function() return function() end end end
+                end)
+            end
         end
-        return oldRequire(module)
+        return res
     end
 
-    local HttpService = game:GetService("HttpService")
-    local methods = {"Get", "GetAsync", "Post", "PostAsync", "Request", "RequestAsync"}
-    for _, method in ipairs(methods) do
-        if HttpService[method] then
-            local original = HttpService[method]
-            HttpService[method] = function(self, ...)
+    for _, mod in ipairs(getloadedmodules()) do
+        if isACModule(mod) then
+            hiddenModules[mod.Name or "Unknown"] = true
+            for k, v in pairs(mod) do
+                if type(v) == "function" then
+                    mod[k] = function() return true end
+                end
+            end
+        end
+    end
+
+    local blockedKeywords = {"ban", "report", "analytics", "anticheat", "detection", "log", "flag"}
+    local function isUrlBlocked(url)
+        if type(url) ~= "string" then return false end
+        for _, kw in ipairs(blockedKeywords) do
+            if url:lower():find(kw) then return true end
+        end
+        return false
+    end
+
+    local httpMethods = {"GetAsync", "PostAsync", "RequestAsync", "Get", "Post", "Request"}
+    for _, methodName in ipairs(httpMethods) do
+        local original = HttpService[methodName]
+        if original then
+            saveOrig("HttpService."..methodName, original)
+            HttpService[methodName] = function(self, ...)
                 local args = {...}
                 local url = args[1]
-                if type(url) == "string" and (url:find("ban") or url:find("report") or url:find("analytics")) then
-                    return "{}"
+                if isUrlBlocked(url) then
+                    return '{"success":true}'
                 end
                 return original(self, ...)
             end
@@ -50,101 +140,165 @@ local function HardenedAntiBAC()
     end
 
     local function hideSelf()
-        local ourScript = script
-        if ourScript then ourScript:Destroy() end
+        local ourScript = script or (getfenv and getfenv(1).script)
+        if ourScript then
+            pcall(function() ourScript.Parent = nil end)
+        end
         local env = getfenv(1)
         for k, v in pairs(env) do
-            if type(v) == "function" and debug.getinfo(v).source == "@Aero csgo.lua" then
-                env[k] = nil
+            if type(v) == "function" then
+                local info = debug.getinfo(v, "S")
+                if info and info.source and info.source:find(ourScript and ourScript.Name or "") then
+                    env[k] = nil
+                end
             end
         end
     end
     pcall(hideSelf)
 
-    local old_getgc = getgc
-    getgc = function(opt)
-        return {}
+    if TeleportService then
+        saveOrig("TeleportService.Teleport", TeleportService.Teleport)
+        TeleportService.Teleport = function() end
+        saveOrig("TeleportService.TeleportToPrivateServer", TeleportService.TeleportToPrivateServer)
+        TeleportService.TeleportToPrivateServer = function() end
     end
 
-    local old_getreg = getreg
-    getreg = function()
-        return setmetatable({}, { __index = function() return nil end })
-    end
-
-    local old_getfenv = getfenv
-    getfenv = function(index)
-        if index == 0 then return old_getfenv(index) end
-        return setmetatable({}, { __index = function() return nil end })
-    end
-
-    local old_getupvalue = debug.getupvalue
-    debug.getupvalue = function(func, idx)
-        if func and type(func) == "function" and debug.getinfo(func).source:find("AntiBAC") then
-            return nil
-        end
-        return old_getupvalue(func, idx)
-    end
-
-    local old_setupvalue = debug.setupvalue
-    debug.setupvalue = function(func, idx, val)
-        if func and type(func) == "function" and debug.getinfo(func).source:find("AntiBAC") then
-            return nil
-        end
-        return old_setupvalue(func, idx, val)
-    end
-
-    local function disableTeleport()
-        local ts = game:GetService("TeleportService")
-        if ts then
-            local oldTeleport = ts.Teleport
-            ts.Teleport = function(...) return end
-            ts.TeleportToPrivateServer = function(...) return end
-        end
-    end
-    pcall(disableTeleport)
-
-    local function disableRemoteEvents()
+    local function destroySuspiciousRemotes()
         for _, v in ipairs(game:GetDescendants()) do
-            if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
-                if v.Name:find("Anti") or v.Name:find("Ban") or v.Name:find("Report") then
-                    v.OnServerEvent:Connect(function() return end)
+            if (v:IsA("RemoteEvent") or v:IsA("RemoteFunction")) then
+                local name = v.Name:lower()
+                if name:find("anti") or name:find("ban") or name:find("report") or name:find("flag") then
                     pcall(function() v:Destroy() end)
                 end
             end
         end
     end
-    pcall(disableRemoteEvents)
+    pcall(destroySuspiciousRemotes)
 
-    local function disruptHeartbeat()
-        local rs = game:GetService("RunService")
-        local oldStepped = rs.Stepped
-        rs.Stepped = function() return end
-        rs.Heartbeat = function() return end
-        rs.RenderStepped = function() return end
+    game.DescendantAdded:Connect(function(v)
+        if (v:IsA("RemoteEvent") or v:IsA("RemoteFunction")) then
+            local name = v.Name:lower()
+            if name:find("anti") or name:find("ban") or name:find("report") or name:find("flag") then
+                pcall(function() v:Destroy() end)
+            end
+        end
+    end)
+
+    local function registerGuiProtection(guiObject)
+        if not guiObject then return end
+        protectedGuis[guiObject] = true
+        guiObject.Name = HttpService:GenerateGUID(false):sub(1, 10)
     end
-    pcall(disruptHeartbeat)
+
+    local function installGuiHooks()
+        local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+        local function wrapFindFirstChild(instance)
+            local origFind = instance.FindFirstChild
+            if origFind then
+                instance.FindFirstChild = function(self, name, recursive)
+                    local result = origFind(self, name, recursive)
+                    if result and protectedGuis[result] then return nil end
+                    return result
+                end
+            end
+        end
+        local function wrapWaitForChild(instance)
+            local origWait = instance.WaitForChild
+            if origWait then
+                instance.WaitForChild = function(self, name, timeout)
+                    local result = origWait(self, name, timeout)
+                    if result and protectedGuis[result] then return nil end
+                    return result
+                end
+            end
+        end
+        local function wrapGetChildren(instance)
+            local origGet = instance.GetChildren
+            if origGet then
+                instance.GetChildren = function(self)
+                    local children = origGet(self)
+                    local filtered = {}
+                    for _, child in ipairs(children) do
+                        if not protectedGuis[child] then
+                            table.insert(filtered, child)
+                        end
+                    end
+                    return filtered
+                end
+            end
+        end
+        local function processContainer(container)
+            wrapFindFirstChild(container)
+            wrapWaitForChild(container)
+            wrapGetChildren(container)
+            for _, child in ipairs(container:GetChildren()) do
+                if child:IsA("ScreenGui") or child:IsA("Folder") then
+                    processContainer(child)
+                end
+            end
+        end
+        processContainer(playerGui)
+        playerGui.ChildAdded:Connect(function(child)
+            if child:IsA("ScreenGui") then processContainer(child) end
+        end)
+        pcall(function()
+            local core = CoreGui
+            wrapFindFirstChild(core)
+            wrapWaitForChild(core)
+            wrapGetChildren(core)
+            core.ChildAdded:Connect(function(child)
+                if child:IsA("ScreenGui") then processContainer(child) end
+            end)
+        end)
+    end
+    installGuiHooks()
+
+    getfenv(1).ProtectGui = registerGuiProtection
+
+    local function fakeHeartbeat()
+        local lastHB = tick()
+        local fakeConn
+        fakeConn = RunService.Heartbeat:Connect(function()
+            lastHB = tick()
+        end)
+        task.spawn(function()
+            while true do
+                task.wait(5)
+                if tick() - lastHB > 10 then
+                    pcall(function()
+                        RunService.Heartbeat:Wait()
+                    end)
+                end
+            end
+        end)
+    end
+    pcall(fakeHeartbeat)
 
     task.spawn(function()
-        while task.wait(20) do
+        while task.wait(15) do
             pcall(function()
-                collectgarbage("collect")
-                local lp = game.Players.LocalPlayer
-                if lp and lp.Character then
-                    lp.Character:SetAttribute("_script", nil)
-                    lp.Character:SetAttribute("Bypass", nil)
+                local char = LocalPlayer.Character
+                if char then
+                    for _, attr in ipairs(char:GetAttributes()) do
+                        if attr:lower():find("script") or attr:lower():find("bypass") or attr:lower():find("anti") or attr:lower():find("flag") then
+                            char:SetAttribute(attr, nil)
+                        end
+                    end
                 end
-                for _, v in pairs(game:GetDescendants()) do
-                    if v:IsA("StringValue") and v.Name:find("Anti") then
+                for _, v in ipairs(game:GetDescendants()) do
+                    if (v:IsA("StringValue") or v:IsA("IntValue") or v:IsA("BoolValue")) and (v.Name:lower():find("anti") or v.Name:lower():find("ban") or v.Name:lower():find("flag")) then
                         v:Destroy()
                     end
                 end
+                collectgarbage("collect")
             end)
         end
     end)
 
-    print("[Hardened AntiBAC] Loaded")
+    print("[Ultimate AntiBAC] Loaded")
 end
-xpcall(HardenedAntiBAC, function(err) warn("[Hardened AntiBAC] error: " .. tostring(err)) end)
+
+xpcall(UltimateAntiBAC, function(err) warn("[Ultimate AntiBAC] Error:", err) end)
 
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
