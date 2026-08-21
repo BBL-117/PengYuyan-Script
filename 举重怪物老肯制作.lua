@@ -200,6 +200,7 @@ local player = game:GetService("Players").LocalPlayer
 local event = player.muscleEvent
 
 local Running = false
+local RebirthRunning = false
 local ThreadCount = 0
 local Threads = {}
 
@@ -236,7 +237,7 @@ local function stopThreads()
     Running = false
 end
 
-local Toggle = Tab:Toggle({
+local Toggle1 = Tab:Toggle({
     Title = "快速举重",
     Desc = "只能这么快了 不要介意",
     Type = "Checkbox",
@@ -250,12 +251,24 @@ local Toggle = Tab:Toggle({
     end
 })
 
-local Toggle = Tab:Toggle({
+local Toggle2 = Tab:Toggle({
     Title = "快速重生",
     Desc = "可能有点快吧",
     Type = "Checkbox",
     Value = false,
     Callback = function(state) 
-        print("Toggle Activated" .. tostring(state))
+        if state then
+            RebirthRunning = true
+            task.spawn(function()
+                while RebirthRunning do
+                    pcall(function()
+                        game:GetService("ReplicatedStorage").rEvents.rebirthRemote:InvokeServer(unpack({[1] = "massRebirthRequest", [2] = 500}))
+                    end)
+                    task.wait(0.000001)
+                end
+            end)
+        else
+            RebirthRunning = false
+        end
     end
 })
