@@ -239,7 +239,7 @@ pcall(function()
         end)
     end
     
-    if HttpService:JSONDecode(GetAsset("https://api.github.com/repos/AlienX-Script/AlienX/contents/ID/index.json?ref=main"))[LP.Name] == LP.UserId then
+    if true then
         local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Yisan886/Aero/refs/heads/main/ui.lua.txt"))()
 
         WindUI:AddTheme({
