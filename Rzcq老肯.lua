@@ -227,12 +227,12 @@ local AutoFunctions = {
             while getgenv().AutoR == true do
                 if not getgenv() then break end
                 local ranks = {"Grasshopper","Apprentice","Samurai","Assassin","Shadow","Ninja","Master Ninja","Sensei","Master Sensei","Ninja Legend","Master Of Shadows","Immortal Assassin","Eternity Hunter","Shadow Legend","Dragon Warrior","Dragon Master","Chaos Sensei","Chaos Legend","Master Of Elements","Elemental Legend","Ancient Battle Master","Ancient Battle Legend","Legendary Shadow Duelist","Master Legend Assassin","Mythic Shadowmaster","Legendary Shadowmaster","Awakened Scythemaster","Awakened Scythe Legend","Master Legend Zephyr","Golden Sun Shuriken Master","Golden Sun Shuriken Legend","Dark Sun Samurai Legend","Dragon Evolution Form I","Dragon Evolution Form II","Dragon Evolution Form III","Dragon Evolution Form IV","Dragon Evolution Form V","Cybernetic Electro Master","Cybernetic Electro Legend","Shadow Chaos Assassin","Shadow Chaos Legend","Infinity Sensei","Infinity Legend","Aether Genesis Master Ninja","Master Legend Sensei Hunter","Skystorm Series Samurai Legend","Master Elemental Hero","Eclipse Series Soul Master","Starstrike Master Sensei","Evolved Series Master Ninja","Dark Elements Guardian","Elite Series Master Legend","Infinity Shadows Master","Lighting Storm Sensei","Dark Elements Blademaster","Rising Shadow Eternal Ninja","Skyblade Ninja Master","Shadow Storm Sensei","Comet Strike Lion","Cybernetic Azure Sensei","Ultra Genesis Shadow"}
-                for i = 1, #ranks, 5 do
+                for i = 1, #ranks, 25 do
                     for j = i, math.min(i+4, #ranks) do
                         local args = {[1] = "buyRank", [2] = ranks[j]}
                         game.Players.LocalPlayer:WaitForChild("ninjaEvent"):FireServer(unpack(args))
                     end
-                    wait()
+                    wait(0.00001)
                 end
             end
         end)
@@ -498,7 +498,7 @@ A:Toggle({
             spawn(function()
                 while isLooping and lastInputValue > 0 do
                     game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("zenMasterEvent"):FireServer("convertGems", lastInputValue)
-                    wait(0.5)
+                    wait(0.0001)
                 end
             end)
         end
