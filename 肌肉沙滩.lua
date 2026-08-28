@@ -135,7 +135,7 @@ NoticeTab:Paragraph({
 })
 
 NoticeTab:Paragraph({
-    Title = "禁止倒卖圈钱(说白了老弟就这点B功能你圈你妈呢 自己做一个不会吗？)",
+    Title = "没什么好说的 啦啦啦啦",
     Desc = ""
 })
 
