@@ -472,7 +472,7 @@ local function startAutoRebirth()
     autoRebirthThread = task.spawn(function()
         local Event = game:GetService("ReplicatedStorage").remotes.rebirthRequest
         while autoRebirthRunning do
-            task.wait()
+            task.wait(0.001)
             Event:FireServer()
         end
     end)
@@ -506,7 +506,7 @@ local function startAutoSpin()
         local Event = game:GetService("ReplicatedStorage").spinRequest
         while autoSpinRunning do
             Event:FireServer()
-            task.wait()
+            task.wait(0.001)
         end
     end)
 end
