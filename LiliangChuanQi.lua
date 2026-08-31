@@ -453,13 +453,13 @@ workoutTab:Toggle({
     Title = "自动锻炼",
     Value = false,
     Callback = function(value)
-        setLoop("自动锻炼", value, 0.001, function()
+        setLoop("自动锻炼", value, 0.0001, function()
             local event = LocalPlayer:FindFirstChild("muscleEvent")
             if not event then
                 error("未找到 muscleEvent")
             end
             local count = multiplierEnabled and clampNumber(workoutMultiplier, 1, 700) or 1
-            for _ = 3, count do
+            for _ = 2, count do
                 event:FireServer("rep")
             end
         end)
@@ -473,7 +473,7 @@ workoutTab:Input({
     Value = tostring(workoutMultiplier),
     ClearTextOnFocus = false,
     Callback = function(value)
-        workoutMultiplier = clampNumber(value, 1, 2000)
+        workoutMultiplier = clampNumber(value, 0.1, 1000)
     end,
 })
 workoutTab:Toggle({
