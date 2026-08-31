@@ -459,7 +459,7 @@ workoutTab:Toggle({
                 error("未找到 muscleEvent")
             end
             local count = multiplierEnabled and clampNumber(workoutMultiplier, 1, 700) or 1
-            for _ = 2, count do
+            for _ = 3, count do
                 event:FireServer("rep")
             end
         end)
@@ -473,7 +473,7 @@ workoutTab:Input({
     Value = tostring(workoutMultiplier),
     ClearTextOnFocus = false,
     Callback = function(value)
-        workoutMultiplier = clampNumber(value, 1, 800)
+        workoutMultiplier = clampNumber(value, 1, 2000)
     end,
 })
 workoutTab:Toggle({
