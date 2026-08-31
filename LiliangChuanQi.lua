@@ -555,7 +555,7 @@ rebirthTab:Toggle({
     Title = "自动切换宠物1",
     Value = false,
     Callback = function(value)
-        setLoop("自动切换宠物1", value, 0.35, function()
+        setLoop("自动切换宠物1", value, 0.1, function()
             equipOnlyPet("Swift Samurai")
         end)
     end,
@@ -564,7 +564,7 @@ rebirthTab:Toggle({
     Title = "自动切换宠物2",
     Value = false,
     Callback = function(value)
-        setLoop("自动切换宠物2", value, 0.35, function()
+        setLoop("自动切换宠物2", value, 0.1, function()
             equipOnlyPet("Tribal Overlord")
         end)
     end,
@@ -573,7 +573,7 @@ rebirthTab:Toggle({
     Title = "自动重生",
     Value = false,
     Callback = function(value)
-        setLoop("快速自动重生", value, 0.08, requestRebirth)
+        setLoop("快速自动重生", value, 0.001, requestRebirth)
     end,
 })
 task.spawn(function()
