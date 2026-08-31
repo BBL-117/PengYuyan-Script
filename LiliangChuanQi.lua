@@ -573,7 +573,7 @@ rebirthTab:Toggle({
     Title = "自动重生",
     Value = false,
     Callback = function(value)
-        setLoop("快速自动重生", value, 0.01, requestRebirth)
+        setLoop("快速自动重生", value, 0.08, requestRebirth)
     end,
 })
 task.spawn(function()
