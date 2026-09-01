@@ -473,7 +473,7 @@ workoutTab:Input({
     Value = tostring(workoutMultiplier),
     ClearTextOnFocus = false,
     Callback = function(value)
-        workoutMultiplier = clampNumber(value, 1, 800)
+        workoutMultiplier = clampNumber(value, 1, 8888)
     end,
 })
 
@@ -487,7 +487,7 @@ workoutTab:Toggle({
         end
 
         workoutRunning = false
-        task.wait(0.001)
+        task.wait(0.0001)
         workoutRunning = true
 
         task.spawn(function()
@@ -497,17 +497,17 @@ workoutTab:Toggle({
                 return
             end
 
-            local SAFE_RATE = 7891
-            local BATCH_LIMIT = 888
+            local SAFE_RATE = 10000
+            local BATCH_LIMIT = 2500
 
             while workoutRunning do
-                local batch = clampNumber(workoutMultiplier, 1, 7891)
+                local batch = clampNumber(workoutMultiplier, 1, 12500)
                 if batch > BATCH_LIMIT then batch = BATCH_LIMIT end
 
                 local interval = batch / SAFE_RATE
                 if interval < 0.001 then interval = 0.001 end
 
-                for _ = 1, batch do
+                for _ = 3, batch do
                     if not workoutRunning then break end
                     event:FireServer("rep")
                 end
