@@ -473,15 +473,50 @@ workoutTab:Input({
     Value = tostring(workoutMultiplier),
     ClearTextOnFocus = false,
     Callback = function(value)
-        workoutMultiplier = clampNumber(value, 0.1, 1000)
+        workoutMultiplier = clampNumber(value, 1, 800)
     end,
 })
+
 workoutTab:Toggle({
     Title = "倍数锻炼",
     Value = false,
     Callback = function(value)
-        multiplierEnabled = value and true or false
-        notify("倍数锻炼", (multiplierEnabled and "已开启，倍数: " or "已关闭，当前设置: ") .. tostring(workoutMultiplier))
+        if not value then
+            workoutRunning = false
+            return
+        end
+
+        workoutRunning = false
+        task.wait(0.001)
+        workoutRunning = true
+
+        task.spawn(function()
+            local event = LocalPlayer:FindFirstChild("muscleEvent")
+            if not event then
+                workoutRunning = false
+                return
+            end
+
+            local SAFE_RATE = 7891
+            local BATCH_LIMIT = 888
+
+            while workoutRunning do
+                local batch = clampNumber(workoutMultiplier, 1, 7891)
+                if batch > BATCH_LIMIT then batch = BATCH_LIMIT end
+
+                local interval = batch / SAFE_RATE
+                if interval < 0.001 then interval = 0.001 end
+
+                for _ = 1, batch do
+                    if not workoutRunning then break end
+                    event:FireServer("rep")
+                end
+
+                if workoutRunning then
+                    task.wait(interval)
+                end
+            end
+        end)
     end,
 })
 
