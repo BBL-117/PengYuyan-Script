@@ -468,12 +468,12 @@ workoutTab:Toggle({
 workoutTab:Section({ Title = "快速锻炼(需要至少7个2999R币包)", TextSize = 25 })
 workoutTab:Input({
     Title = "自定义锻炼倍数",
-    Desc = "建议200～300，手机配置好可以尝试更高",
+    Desc = "建议2000～3000，手机配置好可以尝试更高",
     Placeholder = "请输入",
     Value = tostring(workoutMultiplier),
     ClearTextOnFocus = false,
     Callback = function(value)
-        workoutMultiplier = clampNumber(value, 1, 8888)
+        workoutMultiplier = clampNumber(value, 1, 18888)
     end,
 })
 
@@ -487,7 +487,7 @@ workoutTab:Toggle({
         end
 
         workoutRunning = false
-        task.wait(0.0001)
+        task.wait(0.000001)
         workoutRunning = true
 
         task.spawn(function()
@@ -497,17 +497,17 @@ workoutTab:Toggle({
                 return
             end
 
-            local SAFE_RATE = 10000
-            local BATCH_LIMIT = 2500
+            local SAFE_RATE = 125000
+            local BATCH_LIMIT = 12500
 
             while workoutRunning do
-                local batch = clampNumber(workoutMultiplier, 1, 12500)
+                local batch = clampNumber(workoutMultiplier, 1, 99999)
                 if batch > BATCH_LIMIT then batch = BATCH_LIMIT end
 
                 local interval = batch / SAFE_RATE
-                if interval < 0.001 then interval = 0.001 end
+                if interval < 0.0001 then interval = 0.0001 end
 
-                for _ = 3, batch do
+                for _ = 10, batch do
                     if not workoutRunning then break end
                     event:FireServer("rep")
                 end
