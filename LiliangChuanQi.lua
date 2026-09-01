@@ -453,12 +453,12 @@ workoutTab:Toggle({
     Title = "自动锻炼",
     Value = false,
     Callback = function(value)
-        setLoop("自动锻炼", value, 0.00001, function()
+        setLoop("自动锻炼", value, 0.000001, function()
             local event = LocalPlayer:FindFirstChild("muscleEvent")
             if not event then
                 error("未找到 muscleEvent")
             end
-            local count = multiplierEnabled and clampNumber(workoutMultiplier, 1, 700) or 1
+            local count = multiplierEnabled and clampNumber(workoutMultiplier, 1, 70000) or 1
             for _ = 3, count do
                 event:FireServer("rep")
             end
@@ -473,7 +473,7 @@ workoutTab:Input({
     Value = tostring(workoutMultiplier),
     ClearTextOnFocus = false,
     Callback = function(value)
-        workoutMultiplier = clampNumber(value, 0.01, 188888)
+        workoutMultiplier = clampNumber(value, 0.01, 88888888)
     end,
 })
 
@@ -487,7 +487,7 @@ workoutTab:Toggle({
         end
 
         workoutRunning = false
-        task.wait(0.000000001)
+        task.wait(0.0000000000001)
         workoutRunning = true
 
         task.spawn(function()
@@ -497,17 +497,17 @@ workoutTab:Toggle({
                 return
             end
 
-            local SAFE_RATE = 1250000
-            local BATCH_LIMIT = 125000
+            local SAFE_RATE = 92500000
+            local BATCH_LIMIT = 9250000
 
             while workoutRunning do
-                local batch = clampNumber(workoutMultiplier, 0.01, 1999999)
+                local batch = clampNumber(workoutMultiplier, 0.0001, 9999999)
                 if batch > BATCH_LIMIT then batch = BATCH_LIMIT end
 
                 local interval = batch / SAFE_RATE
-                if interval < 0.0001 then interval = 0.0001 end
+                if interval < 0.000000001 then interval = 0.000000001 end
 
-                for _ = 75, batch do
+                for _ = 150, batch do
                     if not workoutRunning then break end
                     event:FireServer("rep")
                 end
