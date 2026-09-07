@@ -1,11 +1,9 @@
 local ui = loadstring(game:HttpGet("https://raw.githubusercontent.com/dingding123hhh/hun/main/jmlibrary1.lua"))()     
 local win = ui:new("虚空肌肉")
 
-local UITab1 = win:Tab("『通用』", '87437251671184')
-local about = UITab1:section("『通用』", true)
-
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+
 local reviveEnabled = false
 local deathPosition = nil
 
@@ -34,13 +32,8 @@ if player.Character then
     onCharacterAdded(player.Character)
 end
 
-local function startRevive()
-    reviveEnabled = true
-end
-
-local function stopRevive()
-    reviveEnabled = false
-end
+local function startRevive() reviveEnabled = true end
+local function stopRevive() reviveEnabled = false end
 
 local exerciseRunning = false
 local exerciseThread = nil
@@ -58,7 +51,7 @@ local function startExercise()
                     player:WaitForChild("muscleEvent"):FireServer(unpack(args))
                 end
             end)
-            task.wait(0.00001)
+            task.wait(0.0000001)
         end
         exerciseThread = nil
     end)
@@ -77,10 +70,10 @@ local function startRebirth()
     rebirthThread = task.spawn(function()
         while rebirthRunning do
             pcall(function()
-                local args = { "rebirthRequest", 9999999999999 }
+                local args = { "rebirthRequest", 9999999999999999 }
                 game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("rebirthRemote"):InvokeServer(unpack(args))
             end)
-            task.wait(0.00001)
+            task.wait(0.000001)
         end
         rebirthThread = nil
     end)
@@ -100,10 +93,10 @@ local function startCrystalLoop()
         local Remote = game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("openCrystalRemote")
         while crystalLoopValue do
             task.wait(0.0000001)
-            for i = 0.1, 990000000 do
+            for i = 0.01, 9999999999 do
                 if not crystalLoopValue then break end
                 pcall(function()
-                    Remote:InvokeServer("openCrystal", "Eltrax Crystal")
+                    Remote:InvokeServer("openCrystal", "Hydra Crystal")
                 end)
             end
         end
@@ -137,47 +130,95 @@ local function stopEvolve()
     evolveRunning = false
 end
 
-about:Toggle("自动锻炼", "只支持哑铃", false, function(Value)
-    if Value then
-        startExercise()
-    else
-        stopExercise()
-    end
+local teleportRunning = false
+local teleportThread = nil
+local teleportTarget = CFrame.new(5212.50, 312.70, 10240.90)
+
+local function startTeleport()
+    if teleportThread then return end
+    teleportRunning = true
+    teleportThread = task.spawn(function()
+        while teleportRunning do
+            pcall(function()
+                local char = player.Character
+                if char then
+                    local root = char:FindFirstChild("HumanoidRootPart")
+                    if root then
+                        root.CFrame = teleportTarget
+                    end
+                end
+            end)
+            task.wait(0.1)
+        end
+        teleportThread = nil
+    end)
+end
+
+local function stopTeleport()
+    teleportRunning = false
+end
+
+local killRunning = false
+local killThread = nil
+
+local function startKill()
+    if killThread then return end
+    killRunning = true
+    killThread = task.spawn(function()
+        local LocalPlayer = player
+        while killRunning do
+            local character = LocalPlayer.Character
+            local root = character and (character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso"))
+            local muscleEvent = LocalPlayer:FindFirstChild("muscleEvent")
+
+            if not (character and root and muscleEvent) then
+                task.wait(1.2)
+                continue
+            end
+
+            local targets = Players:GetPlayers()
+            for _, targetPlayer in ipairs(targets) do
+                if not killRunning then break end
+                if targetPlayer == LocalPlayer then continue end
+
+                local targetChar = targetPlayer.Character
+                if not targetChar then continue end
+                local targetRoot = targetChar:FindFirstChild("HumanoidRootPart") or targetChar:FindFirstChild("Torso")
+                if not targetRoot then continue end
+
+                root.CFrame = targetRoot.CFrame + Vector3.new(0, 2.5, 0)
+                task.wait()
+                if not killRunning then break end
+                muscleEvent:FireServer("punch", "rightHand")
+                task.wait(1.2)
+            end
+
+            task.wait(1.2)
+        end
+        killThread = nil
+    end)
+end
+
+local function stopKill()
+    killRunning = false
+end
+
+local tabExercise = win:Tab("『锻炼功能』", '87437251671184')
+local exerciseSection = tabExercise:section("『牛逼』", true)
+
+exerciseSection:Toggle("自动锻炼", "只支持哑铃", false, function(Value)
+    if Value then startExercise() else stopExercise() end
 end)
 
-about:Toggle("自动重生", "", false, function(Value)
-    if Value then
-        startRebirth()
-    else
-        stopRebirth()
-    end
+exerciseSection:Toggle("自动重生", "", false, function(Value)
+    if Value then startRebirth() else stopRebirth() end
 end)
 
-about:Toggle("快速抽蛋", "只支持50k绿宝石的宠物水晶", false, function(Value)
-    if Value then
-        startCrystalLoop()
-    else
-        stopCrystalLoop()
-    end
+exerciseSection:Toggle("原地复活", "", false, function(Value)
+    if Value then startRevive() else stopRevive() end
 end)
 
-about:Toggle("自动进化", "", false, function(Value)
-    if Value then
-        startEvolve()
-    else
-        stopEvolve()
-    end
-end)
-
-about:Toggle("原地复活", "", false, function(Value)
-    if Value then
-        startRevive()
-    else
-        stopRevive()
-    end
-end)
-
-about:Toggle("删除显示", "点击开启执行一次", false, function(Value)
+exerciseSection:Toggle("删除显示", "点击开启执行一次", false, function(Value)
     if Value then
         pcall(function()
             local character = player.Character
@@ -190,15 +231,13 @@ about:Toggle("删除显示", "点击开启执行一次", false, function(Value)
             local ReplicatedStorage = game:GetService("ReplicatedStorage")
             for _, name in ipairs({ "strengthFrame", "durabilityFrame", "agilityFrame" }) do
                 local frame = ReplicatedStorage:FindFirstChild(name)
-                if frame then
-                    frame:Destroy()
-                end
+                if frame then frame:Destroy() end
             end
         end)
     end
 end)
 
-about:Toggle("删除没用的东西", "点击开启执行一次", false, function(Value)
+exerciseSection:Toggle("删除没用的东西", "点击开启执行一次", false, function(Value)
     if Value then
         pcall(function()
             local character = player.Character
@@ -209,5 +248,31 @@ about:Toggle("删除没用的东西", "点击开启执行一次", false, functio
                 end
             end
         end)
+    end
+end)
+
+local tabPet = win:Tab("『抽蛋功能』", '87437251671185')
+local petSection = tabPet:section("『牛逼』", true)
+
+petSection:Toggle("快速抽蛋", "只支持1.2k绿宝石的宠物水晶", false, function(Value)
+    if Value then startCrystalLoop() else stopCrystalLoop() end
+end)
+
+petSection:Toggle("自动进化", "", false, function(Value)
+    if Value then startEvolve() else stopEvolve() end
+end)
+
+petSection:Toggle("传送宠物蛋", "持续传送至 (5212.50, 312.70, 10240.90)", false, function(Value)
+    if Value then startTeleport() else stopTeleport() end
+end)
+
+local tabKill = win:Tab("『杀戮功能』", '87437251671186')
+local killSection = tabKill:section("『牛逼』", true)
+
+killSection:Toggle("传送攻击", "传送至目标上方并出拳", false, function(Value)
+    if Value then
+        startKill()
+    else
+        stopKill()
     end
 end)
