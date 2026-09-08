@@ -70,7 +70,7 @@ local function startRebirth()
     rebirthThread = task.spawn(function()
         while rebirthRunning do
             pcall(function()
-                local args = { "rebirthRequest", 5000000000000000 }
+                local args = { "rebirthRequest", 2000000000000000 }
                 game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("rebirthRemote"):InvokeServer(unpack(args))
             end)
             task.wait(0.000001)
