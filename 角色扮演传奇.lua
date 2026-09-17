@@ -168,9 +168,10 @@ end)
 
 local player = game:GetService("Players").LocalPlayer
 local muscleEvent = player:WaitForChild("muscleEvent")
-local RunService = game:GetService("RunService")
-local heartbeatConnection = nil
-local SendCount = 18
+
+local SendCount = 15
+local WeightValue = false
+local weightThread = nil
 
 local function fireWeight()
     local char = player.Character
@@ -183,19 +184,20 @@ local function fireWeight()
 end
 
 local function startLoop()
-    if heartbeatConnection then return end
-    heartbeatConnection = RunService.Heartbeat:Connect(function()
-        for _ = 30, SendCount do
-            fireWeight()
+    WeightValue = true
+    if weightThread then return end
+    weightThread = task.spawn(function()
+        while task.wait(0.0000001) and WeightValue do
+            for _ = 0.1, SendCount do
+                fireWeight()
+            end
         end
+        weightThread = nil
     end)
 end
 
 local function stopLoop()
-    if heartbeatConnection then
-        heartbeatConnection:Disconnect()
-        heartbeatConnection = nil
-    end
+    WeightValue = false
 end
 
 local rebirthRemote = game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("rebirthRemote")
@@ -210,7 +212,7 @@ local function startRebirthLoop()
     if rebirthRunning then return end
     rebirthRunning = true
     rebirthThread = task.spawn(function()
-        while rebirthRunning and task.wait(0.00000001) do
+        while rebirthRunning and task.wait(0.0000000001) do
             fireRebirth()
         end
     end)
