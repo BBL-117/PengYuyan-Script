@@ -153,7 +153,7 @@ end
 task.spawn(function()
     local wasOpen = false
     while true do
-        task.wait(0.000001)
+        task.wait(0.00000001)
         local mainFrame = Window.UIElements and Window.UIElements.Main
         local isOpen = mainFrame and mainFrame.Visible or false
         
@@ -185,7 +185,7 @@ end
 local function startLoop()
     if heartbeatConnection then return end
     heartbeatConnection = RunService.Heartbeat:Connect(function()
-        for _ = 10, SendCount do
+        for _ = 30, SendCount do
             fireWeight()
         end
     end)
@@ -210,7 +210,7 @@ local function startRebirthLoop()
     if rebirthRunning then return end
     rebirthRunning = true
     rebirthThread = task.spawn(function()
-        while rebirthRunning and task.wait(0.000001) do
+        while rebirthRunning and task.wait(0.00000001) do
             fireRebirth()
         end
     end)
@@ -254,6 +254,110 @@ local RebirthToggle = Tab:Toggle({
             startRebirthLoop()
         else
             stopRebirthLoop()
+        end
+    end
+})
+
+local crystalMap = {
+    ["欧米茄泰坦X水晶"] = "Great Dime Crystal",
+    ["无限水晶"] = "Weakness Crystal",
+}
+
+local TP_POSITION = Vector3.new(145.51, 12.07, 446.39)
+
+local selectedCrystal = nil
+local crystalRunning = false
+local crystalThread = nil
+local crystalRemote = game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("openCrystalRemote")
+
+local teleportRunning = false
+local teleportThread = nil
+
+local function startTeleportLoop()
+    if teleportRunning then return end
+    teleportRunning = true
+    teleportThread = task.spawn(function()
+        while teleportRunning and task.wait(0.000000001) do
+            local char = player.Character
+            if char then
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    hrp.CFrame = CFrame.new(TP_POSITION)
+                end
+            end
+        end
+    end)
+end
+
+local function stopTeleportLoop()
+    teleportRunning = false
+    if teleportThread then
+        task.cancel(teleportThread)
+        teleportThread = nil
+    end
+end
+
+local function startCrystalLoop()
+    if crystalRunning then return end
+    if not selectedCrystal then return end
+    crystalRunning = true
+    crystalThread = task.spawn(function()
+        while crystalRunning and task.wait(0.0000000001) do
+            local args = {
+                "openCrystalBatch",
+                selectedCrystal,
+                10
+            }
+            crystalRemote:InvokeServer(unpack(args))
+        end
+    end)
+end
+
+local function stopCrystalLoop()
+    crystalRunning = false
+    if crystalThread then
+        task.cancel(crystalThread)
+        crystalThread = nil
+    end
+end
+
+local autoPetToggle
+
+local Dropdown = Tab:Dropdown({
+    Title = "选择水晶",
+    Desc = "选择要自动抽取的水晶",
+    Values = { "欧米茄泰坦X水晶", "无限水晶" },
+    Value = {},
+    Multi = true,
+    AllowNone = true,
+    Callback = function(option)
+        selectedCrystal = nil
+        if option and #option > 0 then
+            selectedCrystal = crystalMap[option[1]]
+        end
+        if autoPetToggle and autoPetToggle.Value then
+            stopCrystalLoop()
+            if selectedCrystal then
+                startCrystalLoop()
+            end
+        end
+    end
+})
+
+autoPetToggle = Tab:Toggle({
+    Title = "自动抽宠物",
+    Desc = "ZDCCW",
+    Type = "Checkbox",
+    Value = false,
+    Callback = function(state) 
+        if state then
+            startTeleportLoop()
+            if selectedCrystal then
+                startCrystalLoop()
+            end
+        else
+            stopTeleportLoop()
+            stopCrystalLoop()
         end
     end
 })
