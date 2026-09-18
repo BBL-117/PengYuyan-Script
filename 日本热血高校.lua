@@ -5,11 +5,9 @@ local success, err = pcall(function()
 end)
 
 if not success or not WindUI then
-    warn("第一个源加载失败，尝试官方备用源...")
     local success2, err2 = pcall(function()
         WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
     end)
-    
     if not success2 or not WindUI then
         error("UI库彻底加载失败！原因：" .. tostring(err2))
     end
