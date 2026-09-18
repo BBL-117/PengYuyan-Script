@@ -1,4 +1,19 @@
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Yisan886/Aero/refs/heads/main/ui.lua.txt"))()
+local WindUI
+local success, err = pcall(function()
+    local source = game:HttpGet("https://raw.githubusercontent.com/Yisan886/Aero/refs/heads/main/ui.lua.txt")
+    WindUI = loadstring(source)()
+end)
+
+if not success or not WindUI then
+    warn("第一个源加载失败，尝试官方备用源...")
+    local success2, err2 = pcall(function()
+        WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+    end)
+    
+    if not success2 or not WindUI then
+        error("UI库彻底加载失败！原因：" .. tostring(err2))
+    end
+end
 
 WindUI:AddTheme({
     Name = "Fallen Aero",
@@ -175,72 +190,6 @@ end
 local attackEnabled = false
 local attackLoop = nil
 
-local function getDistanceSq(pos1, pos2)
-    local d = pos1 - pos2
-    return d.X * d.X + d.Y * d.Y + d.Z * d.Z
-end
-
-local function getNearestTarget()
-    local myChar = LocalPlayer.Character
-    if not myChar then return nil end
-    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-        or myChar:FindFirstChild("Torso")
-        or myChar:FindFirstChild("UpperTorso")
-    if not myRoot then return nil end
-
-    local myPos = myRoot.Position
-    local nearest = nil
-    local nearestDist = math.huge
-
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Parent then
-            if not isTeammate(player) then
-                local char = player.Character
-                if char and char.Parent == workspace then
-                    local humanoid = char:FindFirstChildOfClass("Humanoid")
-                    if humanoid and humanoid.Health > 0 then
-                        local root = char:FindFirstChild("HumanoidRootPart")
-                            or char:FindFirstChild("Torso")
-                            or char:FindFirstChild("UpperTorso")
-                        if root then
-                            local dist = getDistanceSq(myPos, root.Position)
-                            if dist < nearestDist then
-                                nearestDist = dist
-                                nearest = char
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    for i = 1, 6 do
-        local spawnFolder = workspace:FindFirstChild("NPCSpawn" .. i)
-        if spawnFolder then
-            for _, hum in ipairs(spawnFolder:GetDescendants()) do
-                if hum:IsA("Humanoid") and hum.Health > 0 then
-                    local model = hum.Parent
-                    if model then
-                        local root = model:FindFirstChild("HumanoidRootPart")
-                            or model:FindFirstChild("Torso")
-                            or model:FindFirstChild("UpperTorso")
-                        if root then
-                            local dist = getDistanceSq(myPos, root.Position)
-                            if dist < nearestDist then
-                                nearestDist = dist
-                                nearest = model
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    return nearest
-end
-
 KillTab:Toggle({
     Title = "范围杀戮",
     Desc = "老牛逼了",
@@ -264,13 +213,39 @@ KillTab:Toggle({
 
         attackLoop = coroutine.create(function()
             while attackEnabled do
-                local target = getNearestTarget()
-                if target then
-                    pcall(function()
-                        DealDamageEvent:FireServer(target)
-                    end)
+                for _, player in ipairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Parent then
+                        if not isTeammate(player) then
+                            local char = player.Character
+                            if char and char.Parent == workspace then
+                                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                                if humanoid and humanoid.Health > 0 then
+                                    pcall(function()
+                                        DealDamageEvent:FireServer(char)
+                                    end)
+                                end
+                            end
+                        end
+                    end
                 end
-                task.wait(0.06)
+
+                for i = 1, 6 do
+                    local spawnFolder = workspace:FindFirstChild("NPCSpawn" .. i)
+                    if spawnFolder then
+                        for _, hum in ipairs(spawnFolder:GetDescendants()) do
+                            if hum:IsA("Humanoid") and hum.Health > 0 then
+                                local model = hum.Parent
+                                if model then
+                                    pcall(function()
+                                        DealDamageEvent:FireServer(model)
+                                    end)
+                                end
+                            end
+                        end
+                    end
+                end
+
+                task.wait(0.1)
             end
         end)
         coroutine.resume(attackLoop)
