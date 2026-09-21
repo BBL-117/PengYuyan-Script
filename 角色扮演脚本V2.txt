@@ -153,7 +153,7 @@ end
 task.spawn(function()
     local wasOpen = false
     while true do
-        task.wait(0.0000000001)
+        task.wait(0.00000000001)
         local mainFrame = Window.UIElements and Window.UIElements.Main
         local isOpen = mainFrame and mainFrame.Visible or false
         
@@ -170,7 +170,7 @@ local player = game:GetService("Players").LocalPlayer
 local muscleEvent = player:WaitForChild("muscleEvent")
 local RunService = game:GetService("RunService")
 local heartbeatConnection = nil
-local SendCount = 30
+local SendCount = 15
 
 local function fireWeight()
     local char = player.Character
@@ -185,7 +185,7 @@ end
 local function startLoop()
     if heartbeatConnection then return end
     heartbeatConnection = RunService.Heartbeat:Connect(function()
-        for _ = 0.0001, SendCount do
+        for _ = 0.01, SendCount do
             fireWeight()
         end
     end)
